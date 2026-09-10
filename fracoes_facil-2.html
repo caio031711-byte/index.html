@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frações Fácil</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f4f6fb;
+    color: #202535;
+  }
+  header {
+    background: #5b5bd6;
+    color: white;
+    padding: 24px 18px;
+    text-align: center;
+    border-radius: 0 0 24px 24px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 28px; }
+  header p { margin: 0; opacity: .9; }
+  main { max-width: 650px; margin: 18px auto; padding: 0 14px 30px; }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 5px 18px #00000010;
+  }
+  h2 { margin-top: 0; }
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  button, select, input {
+    font: inherit;
+    border-radius: 12px;
+  }
+  button {
+    border: 0;
+    padding: 13px;
+    background: #5b5bd6;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.secondary { background: #e9eaf7; color: #34365a; }
+  .tabs button.active { background: #3838a9; }
+  .operation {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 800;
+    margin: 20px 0;
+  }
+  .fraction {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    line-height: 1;
+    text-align: center;
+    min-width: 48px;
+  }
+  .fraction span:first-child {
+    border-bottom: 3px solid currentColor;
+    padding: 0 8px 5px;
+  }
+  .fraction span:last-child { padding: 5px 8px 0; }
+  .answer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .answer input {
+    width: 90px;
+    padding: 12px;
+    text-align: center;
+    border: 2px solid #d9dbea;
+  }
+  .answer .slash { font-size: 25px; font-weight: bold; }
+  #result { text-align: center; margin-top: 14px; font-weight: 700; min-height: 24px; }
+  .hint { color: #656a7d; font-size: 14px; }
+  .history { margin: 0; padding-left: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧮 Frações Fácil</h1>
+  <p>Aprenda, calcule e pratique frações.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>🔢 Calculadora</h2>
+    <div class="tabs" id="tabs">
+      <button class="active" data-op="+">➕ Adição</button>
+      <button data-op="-">➖ Subtração</button>
+      <button data-op="×">✖️ Multiplicação</button>
+      <button data-op="÷">➗ Divisão</button>
+    </div>
+
+    <div class="operation">
+      <span class="fraction"><span><input id="n1" value="1" type="number"></span><span><input id="d1" value="2" type="number"></span></span>
+      <span id="op">+</span>
+      <span class="fraction"><span><input id="n2" value="1" type="number"></span><span><input id="d2" value="3" type="number"></span></span>
+    </div>
+
+    <button onclick="calcular()">Calcular</button>
+    <div id="result"></div>
+    <p class="hint">O resultado é simplificado automaticamente.</p>
+  </section>
+
+  <section class="card">
+    <h2>🎯 Exercício</h2>
+    <p id="question">Clique em “Novo exercício” para começar.</p>
+    <div class="answer">
+      <input id="ansN" type="number" placeholder="numerador">
+      <span class="slash">/</span>
+      <input id="ansD" type="number" placeholder="denominador">
+    </div>
+    <br>
+    <button onclick="verificar()">Verificar</button>
+    <button class="secondary" onclick="novoExercicio()">Novo exercício</button>
+    <div id="exerciseResult"></div>
+  </section>
+</main>
+
+<script>
+let currentOp = "+";
+let exercise = null;
+
+function gcd(a,b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) [a,b] = [b,a%b];
+  return a || 1;
+}
+function simplify(n,d) {
+  if (d === 0) throw new Error("Denominador não pode ser zero.");
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(n,d);
+  return [n/g,d/g];
+}
+function calculate(n1,d1,n2,d2,op) {
+  let n,d;
+  if (op === "+") { n=n1*d2+n2*d1; d=d1*d2; }
+  if (op === "-") { n=n1*d2-n2*d1; d=d1*d2; }
+  if (op === "×") { n=n1*n2; d=d1*d2; }
+  if (op === "÷") { n=n1*d2; d=d1*n2; }
+  return simplify(n,d);
+}
+function fracHTML(n,d) {
+  return `<span class="fraction"><span>${n}</span><span>${d}</span></span>`;
+}
+function calcular() {
+  try {
+    const n1=+document.getElementById("n1").value, d1=+document.getElementById("d1").value;
+    const n2=+document.getElementById("n2").value, d2=+document.getElementById("d2").value;
+    if (!d1 || !d2 || (currentOp==="÷" && !n2)) throw new Error();
+    const [n,d]=calculate(n1,d1,n2,d2,currentOp);
+    document.getElementById("result").innerHTML = `Resultado: ${fracHTML(n,d)}`;
+  } catch {
+    document.getElementById("result").textContent = "⚠️ Confira os números. Não use denominador 0.";
+  }
+}
+document.querySelectorAll("#tabs button").forEach(btn => {
+  btn.onclick=()=>{
+    document.querySelectorAll("#tabs button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    currentOp=btn.dataset.op;
+    document.getElementById("op").textContent=currentOp;
+    calcular();
+  };
+});
+
+function novoExercicio() {
+  const ops=["+","-","×","÷"];
+  const op=ops[Math.floor(Math.random()*ops.length)];
+  let d1=Math.floor(Math.random()*9)+2, d2=Math.floor(Math.random()*9)+2;
+  let n1=Math.floor(Math.random()*9)+1, n2=Math.floor(Math.random()*9)+1;
+  if(op==="÷" && n2===0) n2=1;
+  const [ansN,ansD]=calculate(n1,d1,n2,d2,op);
+  exercise={ansN,ansD};
+  document.getElementById("question").innerHTML =
+    `Quanto é <b>${fracHTML(n1,d1)} ${op} ${fracHTML(n2,d2)}</b>?`;
+  document.getElementById("ansN").value="";
+  document.getElementById("ansD").value="";
+  document.getElementById("exerciseResult").textContent="";
+}
+function verificar() {
+  if(!exercise) return;
+  const n=+document.getElementById("ansN").value, d=+document.getElementById("ansD").value;
+  if(!d) { document.getElementById("exerciseResult").textContent="Digite uma fração válida."; return; }
+  const [sn,sd]=simplify(n,d);
+  const box=document.getElementById("exerciseResult");
+  if(sn===exercise.ansN && sd===exercise.ansD) {
+    box.textContent="✅ Acertou! Mandou bem!";
+  } else {
+    box.textContent=`❌ Ainda não. Tente de novo!`;
+  }
+}
+</script>
+</body>
+</html>
